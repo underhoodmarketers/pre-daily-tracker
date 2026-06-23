@@ -316,16 +316,9 @@ function labelForOffset(offset) {
   return offset === 0 ? 'Today' : d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
-let state = { day: 'zumba', foods: newDayFoods('zumba'), split: null, wellness: defaultWellness() };
+const ENTRY_VERSION = 2;
 
-function mergeLibraryIntoToday() {
-  const library = loadFoodLibrary(state.day);
-  library.forEach(item => {
-    if (!state.foods.find(f => f.name === item.name)) {
-      state.foods.push({ ...item, checked: false });
-    }
-  });
-}
+let state = { day: 'zumba', foods: newDayFoods('zumba'), split: null, wellness: defaultWellness(), entryVersion: ENTRY_VERSION };
 
 function loadToday() {
   try {
@@ -335,12 +328,17 @@ function loadToday() {
       if (parsed && parsed.day && Array.isArray(parsed.foods)) {
         state = parsed;
         if (!state.wellness) state.wellness = defaultWellness();
-        mergeLibraryIntoToday();
+        if (state.entryVersion !== ENTRY_VERSION) {
+          const customFoods = state.foods.filter(f => f.custom);
+          state.foods = newDayFoods(state.day).concat(customFoods);
+          state.entryVersion = ENTRY_VERSION;
+        }
       }
     }
   } catch (e) { /* use defaults */ }
   ensureSplitForToday();
   renderAll();
+  saveToday();
 }
 
 function saveToday() {
