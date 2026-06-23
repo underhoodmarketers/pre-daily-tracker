@@ -139,23 +139,74 @@
 const STORAGE_PREFIX = 'holisticrhythm-tracker-';
 const SPLIT_LOG_KEY = 'holisticrhythm-tracker-split-log';
 const FOOD_LIBRARY_KEY = 'holisticrhythm-tracker-food-library';
+const LIBRARY_VERSION = 3;
 
-function loadFoodLibrary() {
+const foodSchedules = {
+  rest: [
+    { name: 'Chia water + lime + 10 raisins', calories: 90, protein: 3, time: 'Wake up' },
+    { name: '2 boiled eggs', calories: 140, protein: 12, time: '9-10am' },
+    { name: 'Oikos Pro yogurt', calories: 160, protein: 25, time: '9-10am' },
+    { name: 'Berries + apple + peanuts', calories: 210, protein: 6, time: '12-1pm' },
+    { name: '2 eggs + egg white omelette + cheese', calories: 280, protein: 26, time: '3pm' },
+    { name: 'Chicken (100g) + dal + veggies', calories: 320, protein: 38, time: '8pm' }
+  ],
+  zumba: [
+    { name: 'Chia water + lime + 10 raisins', calories: 90, protein: 3, time: 'Wake up' },
+    { name: '2 boiled eggs', calories: 140, protein: 12, time: '9-10am' },
+    { name: 'Oikos Pro yogurt', calories: 160, protein: 25, time: '9-10am' },
+    { name: 'Berries + apple + peanuts', calories: 210, protein: 6, time: '12-1pm' },
+    { name: '2 eggs + egg white omelette + cheese', calories: 280, protein: 26, time: '3pm' },
+    { name: 'Banana', calories: 105, protein: 1, time: '5:30pm' },
+    { name: 'Full scoop Isopure', calories: 110, protein: 25, time: 'Post Zumba' },
+    { name: 'Chicken (120g) + dal + veggies + rice (3/4 cup)', calories: 420, protein: 42, time: '8pm' }
+  ],
+  strength: [
+    { name: 'Chia water + lime + 10 raisins', calories: 90, protein: 3, time: 'Wake up' },
+    { name: 'Oikos Pro yogurt + handful peanuts', calories: 250, protein: 27, time: '8:30am' },
+    { name: '2 eggs + 2 egg whites + Levels shake', calories: 320, protein: 38, time: 'Post gym' },
+    { name: 'Berries + apple + cottage cheese (1/2 cup)', calories: 240, protein: 14, time: '12-1pm' },
+    { name: '2 eggs + egg white omelette + cheese', calories: 280, protein: 26, time: '3pm' },
+    { name: 'Chicken (130g) + dal + veggies + rice', calories: 440, protein: 44, time: '8pm' }
+  ],
+  both: [
+    { name: 'Chia water + lime + 10 raisins', calories: 90, protein: 3, time: 'Wake up' },
+    { name: 'Oikos Pro yogurt + handful peanuts', calories: 250, protein: 27, time: '8:30am' },
+    { name: '2 eggs + 2 egg whites + Levels shake', calories: 320, protein: 38, time: 'Post gym' },
+    { name: 'Berries + apple + cottage cheese (1/2 cup)', calories: 240, protein: 14, time: '12-1pm' },
+    { name: '2 eggs + egg white omelette + cheese', calories: 280, protein: 26, time: '3pm' },
+    { name: 'Banana', calories: 105, protein: 1, time: '5:30pm' },
+    { name: 'Full scoop Isopure', calories: 110, protein: 25, time: 'Post Zumba' },
+    { name: 'Chicken (150g) + dal + veggies + rice (50g)', calories: 480, protein: 48, time: '8pm' }
+  ]
+};
+
+function libraryKey(dayId) {
+  return FOOD_LIBRARY_KEY + '-' + dayId;
+}
+
+function loadFoodLibrary(dayId) {
   try {
-    const raw = localStorage.getItem(FOOD_LIBRARY_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch (e) { /* fall through to seed */ }
-  const seeded = defaultFoods.map(f => ({ ...f }));
-  saveFoodLibrary(seeded);
+    const raw = localStorage.getItem(libraryKey(dayId));
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.version === LIBRARY_VERSION && Array.isArray(parsed.items)) {
+        return parsed.items;
+      }
+    }
+  } catch (e) { /* fall through to reseed */ }
+  const seeded = (foodSchedules[dayId] || foodSchedules.rest).map(f => ({ ...f }));
+  saveFoodLibrary(dayId, seeded);
   return seeded;
 }
 
-function saveFoodLibrary(library) {
-  try { localStorage.setItem(FOOD_LIBRARY_KEY, JSON.stringify(library)); } catch (e) { /* ignore */ }
+function saveFoodLibrary(dayId, library) {
+  try {
+    localStorage.setItem(libraryKey(dayId), JSON.stringify({ version: LIBRARY_VERSION, items: library }));
+  } catch (e) { /* ignore */ }
 }
 
-function newDayFoods() {
-  return loadFoodLibrary().map(f => ({ ...f, checked: false }));
+function newDayFoods(dayId) {
+  return loadFoodLibrary(dayId).map(f => ({ ...f, checked: false }));
 }
 
 const strengthSplits = [
@@ -254,21 +305,6 @@ const dayTypes = [
   { id: 'both', label: 'Strength + Zumba', calories: 1900, protein: 140, workouts: ['Strength training session', 'Bollywood Zumba class'] }
 ];
 
-const defaultFoods = [
-  { name: 'Chia seeds soaked overnight + lime + sea salt', calories: 80, protein: 3, time: '6:45am' },
-  { name: '10 soaked golden raisins', calories: 60, protein: 1, time: '6:45am' },
-  { name: '2-3 boiled eggs (post-workout)', calories: 210, protein: 18, time: '9-10am' },
-  { name: 'Oikos Pro yogurt', calories: 160, protein: 25, time: '9-10am' },
-  { name: 'Mixed berries, half apple, almonds', calories: 220, protein: 6, time: '12-1pm' },
-  { name: 'Omelette — 2 eggs, egg whites, cheese', calories: 280, protein: 26, time: '3pm' },
-  { name: 'Half banana', calories: 55, protein: 1, time: '5pm, pre-Zumba' },
-  { name: 'Isopure Clear protein (Zumba)', calories: 90, protein: 20, time: '5pm, pre-Zumba' },
-  { name: 'Chicken, 100-150g', calories: 250, protein: 40, time: '8pm dinner' },
-  { name: 'Sona Masuri rice, 1 cup', calories: 200, protein: 4, time: '8pm dinner' },
-  { name: 'Moong dal, 1 cup', calories: 150, protein: 9, time: '8pm dinner' },
-  { name: 'Vegetables', calories: 60, protein: 3, time: '8pm dinner' }
-];
-
 function dateKey(offsetDays) {
   const d = new Date();
   d.setDate(d.getDate() - (offsetDays || 0));
@@ -280,7 +316,16 @@ function labelForOffset(offset) {
   return offset === 0 ? 'Today' : d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
-let state = { day: 'zumba', foods: newDayFoods(), split: null, wellness: defaultWellness() };
+let state = { day: 'zumba', foods: newDayFoods('zumba'), split: null, wellness: defaultWellness() };
+
+function mergeLibraryIntoToday() {
+  const library = loadFoodLibrary(state.day);
+  library.forEach(item => {
+    if (!state.foods.find(f => f.name === item.name)) {
+      state.foods.push({ ...item, checked: false });
+    }
+  });
+}
 
 function loadToday() {
   try {
@@ -290,6 +335,7 @@ function loadToday() {
       if (parsed && parsed.day && Array.isArray(parsed.foods)) {
         state = parsed;
         if (!state.wellness) state.wellness = defaultWellness();
+        mergeLibraryIntoToday();
       }
     }
   } catch (e) { /* use defaults */ }
@@ -328,6 +374,7 @@ function renderDayButtons() {
     btn.addEventListener('click', () => {
       state.day = btn.dataset.day;
       state.split = null;
+      state.foods = newDayFoods(state.day);
       ensureSplitForToday();
       renderAll();
       saveToday();
@@ -531,7 +578,7 @@ function runSmartFoodUpdate() {
     });
   });
 
-  let library = loadFoodLibrary();
+  let library = loadFoodLibrary(state.day);
   const removedNames = [];
   library = library.filter(f => {
     const rate = (libraryChecked[f.name] || 0) / totalDays;
@@ -548,7 +595,7 @@ function runSmartFoodUpdate() {
     }
   });
 
-  saveFoodLibrary(library);
+  saveFoodLibrary(state.day, library);
 
   addedNames.forEach(name => {
     if (!state.foods.find(f => f.name === name)) {
