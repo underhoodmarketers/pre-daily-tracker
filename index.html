@@ -127,6 +127,49 @@
 
 <script>
 const STORAGE_PREFIX = 'holisticrhythm-tracker-';
+const SPLIT_LOG_KEY = 'holisticrhythm-tracker-split-log';
+
+const strengthSplits = [
+  { name: 'Push', detail: 'Chest, shoulders, triceps' },
+  { name: 'Legs', detail: 'Quads, hamstrings, glutes, calves' },
+  { name: 'Pull', detail: 'Back, biceps' },
+  { name: 'Full body + core', detail: 'Compound lifts, core' }
+];
+
+function loadSplitLog() {
+  try {
+    const raw = localStorage.getItem(SPLIT_LOG_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) { return []; }
+}
+
+function saveSplitLog(log) {
+  try { localStorage.setItem(SPLIT_LOG_KEY, JSON.stringify(log)); } catch (e) { /* ignore */ }
+}
+
+function todayDateStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function getSuggestedSplit() {
+  const log = loadSplitLog().filter(e => e.date !== todayDateStr());
+  if (log.length === 0) return strengthSplits[0].name;
+  log.sort((a, b) => (a.date < b.date ? 1 : -1));
+  const lastIdx = strengthSplits.findIndex(s => s.name === log[0].split);
+  const nextIdx = lastIdx === -1 ? 0 : (lastIdx + 1) % strengthSplits.length;
+  return strengthSplits[nextIdx].name;
+}
+
+function upsertSplitLog(splitName) {
+  const log = loadSplitLog().filter(e => e.date !== todayDateStr());
+  log.push({ date: todayDateStr(), split: splitName });
+  saveSplitLog(log);
+}
+
+function removeTodaySplitLog() {
+  const log = loadSplitLog().filter(e => e.date !== todayDateStr());
+  saveSplitLog(log);
+}
 
 const dayTypes = [
   { id: 'rest', label: 'Rest day', calories: 1550, protein: 110, workouts: ['Rest — recovery day'] },
@@ -169,6 +212,7 @@ function loadToday() {
       if (parsed && parsed.day && Array.isArray(parsed.foods)) state = parsed;
     }
   } catch (e) { /* use defaults */ }
+  ensureSplitForToday();
   renderAll();
 }
 
@@ -181,6 +225,19 @@ function saveToday() {
   }
 }
 
+function ensureSplitForToday() {
+  const includesStrength = state.day === 'strength' || state.day === 'both';
+  if (includesStrength) {
+    if (!state.split) {
+      state.split = getSuggestedSplit();
+    }
+    upsertSplitLog(state.split);
+  } else {
+    state.split = null;
+    removeTodaySplitLog();
+  }
+}
+
 function renderDayButtons() {
   const el = document.getElementById('day-buttons');
   el.innerHTML = dayTypes.map(d => `
@@ -189,6 +246,8 @@ function renderDayButtons() {
   el.querySelectorAll('button').forEach(btn => {
     btn.addEventListener('click', () => {
       state.day = btn.dataset.day;
+      state.split = null;
+      ensureSplitForToday();
       renderAll();
       saveToday();
     });
@@ -203,13 +262,19 @@ function renderMetrics() {
   const remainProtein = dt.protein - consumedProtein;
 
   const cards = [
-    { label: 'Workout', value: dt.workouts.join(' + ') },
+    { label: 'Workout', value: dt.workouts.join(' + ') }
+  ];
+  if (state.split) {
+    const splitInfo = strengthSplits.find(s => s.name === state.split);
+    cards.push({ label: "Today's strength focus", value: state.split + ' — ' + splitInfo.detail });
+  }
+  cards.push(
     { label: 'Calorie target', value: dt.calories.toLocaleString() },
     { label: 'Protein target', value: dt.protein + ' g' },
     { label: 'Eaten', value: Math.round(consumedCal).toLocaleString() + ' cal · ' + Math.round(consumedProtein) + ' g' },
     { label: remainCal >= 0 ? 'Calories left' : 'Calories over', value: Math.abs(Math.round(remainCal)).toLocaleString() },
     { label: remainProtein >= 0 ? 'Protein left' : 'Protein over', value: Math.abs(Math.round(remainProtein)) + ' g' }
-  ];
+  );
 
   document.getElementById('metrics').innerHTML = cards.map(c => `
     <div class="metric-card">
@@ -217,6 +282,34 @@ function renderMetrics() {
       <p class="metric-value">${c.value}</p>
     </div>
   `).join('');
+
+  const existingOverride = document.getElementById('split-override');
+  if (existingOverride) existingOverride.remove();
+
+  if (state.split) {
+    const overrideHtml = `
+      <div id="split-override" style="margin: -10px 0 20px;">
+        <p class="metric-label" style="margin-bottom:6px;">Train something else instead</p>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          ${strengthSplits.map(s => `
+            <button class="split-override-btn" data-split="${s.name}"
+              style="font-size:12px; padding:6px 10px; border-radius:8px; border:1px solid var(--border);
+              background:${s.name === state.split ? 'var(--magenta-light)' : 'var(--card)'};
+              color:${s.name === state.split ? 'var(--magenta)' : 'var(--text)'}; cursor:pointer;">
+              ${s.name}
+            </button>`).join('')}
+        </div>
+      </div>`;
+    document.getElementById('metrics').insertAdjacentHTML('afterend', overrideHtml);
+    document.querySelectorAll('.split-override-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.split = btn.dataset.split;
+        upsertSplitLog(state.split);
+        renderMetrics();
+        saveToday();
+      });
+    });
+  }
 }
 
 function renderFoodList() {
@@ -297,10 +390,11 @@ function renderWeek() {
     const dt = dayTypes.find(d => d.id === entry.day) || dayTypes[0];
     const cal = entry.foods.filter(f => f.checked).reduce((s, f) => s + f.calories, 0);
     const protein = entry.foods.filter(f => f.checked).reduce((s, f) => s + f.protein, 0);
+    const typeLabel = entry.split ? dt.label + ' (' + entry.split + ')' : dt.label;
     html += `
       <div class="week-row">
         <span class="week-day">${label}</span>
-        <span class="week-type">${dt.label}</span>
+        <span class="week-type">${typeLabel}</span>
         <span class="week-stats">${Math.round(cal)} / ${dt.calories} cal · ${Math.round(protein)} / ${dt.protein} g</span>
       </div>`;
   }
