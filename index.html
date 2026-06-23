@@ -122,7 +122,8 @@
     <div class="food-list" id="food-list"></div>
 
     <div class="add-row">
-      <input type="text" id="new-name" placeholder="Food name">
+      <input type="text" id="new-name" list="food-suggestions" placeholder="Food name" autocomplete="off">
+      <datalist id="food-suggestions"></datalist>
       <input type="number" id="new-cal" placeholder="Calories">
       <input type="number" id="new-protein" placeholder="Protein (g)">
       <button class="add-btn" id="add-food-btn">Add food</button>
@@ -346,6 +347,79 @@ const dayTypes = [
   { id: 'both', label: 'Strength + Zumba', calories: 1900, protein: 140, workouts: ['Strength training session', 'Bollywood Zumba class'] }
 ];
 
+const commonFoodsDB = [
+  { name: '1 egg', calories: 70, protein: 6 },
+  { name: '2 eggs', calories: 140, protein: 12 },
+  { name: '3 eggs', calories: 210, protein: 18 },
+  { name: 'Egg white, 1', calories: 17, protein: 4 },
+  { name: 'Egg whites, 2', calories: 34, protein: 8 },
+  { name: 'Oikos Pro yogurt', calories: 160, protein: 25 },
+  { name: 'Plain Greek yogurt, 1 cup', calories: 150, protein: 22 },
+  { name: 'Cottage cheese, 1/2 cup', calories: 90, protein: 12 },
+  { name: 'Cottage cheese, 1 cup', calories: 180, protein: 24 },
+  { name: 'Cheese, 1 slice', calories: 90, protein: 6 },
+  { name: 'String cheese, 1', calories: 80, protein: 7 },
+  { name: 'Milk, 1 cup', calories: 120, protein: 8 },
+  { name: 'Almond milk, 1 cup', calories: 40, protein: 1 },
+  { name: 'Chicken breast, 100g', calories: 165, protein: 31 },
+  { name: 'Chicken breast, 6 oz', calories: 280, protein: 53 },
+  { name: 'Chicken thigh, 100g', calories: 210, protein: 26 },
+  { name: 'Ground turkey, 100g', calories: 190, protein: 27 },
+  { name: 'Salmon, 100g', calories: 208, protein: 22 },
+  { name: 'Tuna, canned, 100g', calories: 130, protein: 28 },
+  { name: 'Shrimp, 100g', calories: 99, protein: 24 },
+  { name: 'Tofu, 100g', calories: 76, protein: 8 },
+  { name: 'Paneer, 100g', calories: 265, protein: 18 },
+  { name: 'Rice, cooked, 1 cup', calories: 205, protein: 4 },
+  { name: 'Rice, cooked, 1/2 cup', calories: 100, protein: 2 },
+  { name: 'Dal, 1 cup', calories: 130, protein: 9 },
+  { name: 'Quinoa, cooked, 1 cup', calories: 220, protein: 8 },
+  { name: 'Oatmeal, 1 cup cooked', calories: 150, protein: 5 },
+  { name: 'Whole wheat bread, 1 slice', calories: 80, protein: 4 },
+  { name: 'Siete almond flour tortilla', calories: 150, protein: 4 },
+  { name: 'Sweet potato, medium', calories: 100, protein: 2 },
+  { name: 'Potato, medium', calories: 160, protein: 4 },
+  { name: 'Avocado, half', calories: 120, protein: 1 },
+  { name: 'Banana', calories: 105, protein: 1 },
+  { name: 'Apple', calories: 95, protein: 0 },
+  { name: 'Apple, half', calories: 45, protein: 0 },
+  { name: 'Orange', calories: 65, protein: 1 },
+  { name: 'Mixed berries, 1 cup', calories: 60, protein: 1 },
+  { name: 'Grapes, 1 cup', calories: 105, protein: 1 },
+  { name: '10 raisins', calories: 75, protein: 1 },
+  { name: 'Mixed vegetables, 1 cup', calories: 60, protein: 3 },
+  { name: 'Broccoli, 1 cup', calories: 55, protein: 4 },
+  { name: 'Spinach, 1 cup raw', calories: 7, protein: 1 },
+  { name: 'Salad, mixed greens', calories: 20, protein: 1 },
+  { name: 'Almonds, 1 oz', calories: 165, protein: 6 },
+  { name: 'Peanuts, handful (1 oz)', calories: 165, protein: 7 },
+  { name: 'Walnuts, 1 oz', calories: 185, protein: 4 },
+  { name: 'Peanut butter, 1 tbsp', calories: 95, protein: 4 },
+  { name: 'Hummus, 2 tbsp', calories: 70, protein: 2 },
+  { name: 'Protein shake (whey)', calories: 130, protein: 25 },
+  { name: 'Isopure, full scoop', calories: 110, protein: 25 },
+  { name: 'Levels shake', calories: 150, protein: 20 },
+  { name: 'Chia water', calories: 10, protein: 0 },
+  { name: 'Lime', calories: 5, protein: 0 },
+  { name: 'Dark chocolate, 1 oz', calories: 150, protein: 2 },
+  { name: 'Olive oil, 1 tbsp', calories: 120, protein: 0 },
+  { name: 'Coffee, black', calories: 5, protein: 0 },
+  { name: 'Super Coffee', calories: 70, protein: 10 }
+];
+
+function findCommonFood(name) {
+  const normalized = name.trim().toLowerCase();
+  if (!normalized) return null;
+  let match = commonFoodsDB.find(f => f.name.toLowerCase() === normalized);
+  if (match) return match;
+  match = commonFoodsDB.find(f => f.name.toLowerCase().includes(normalized) || normalized.includes(f.name.toLowerCase()));
+  return match || null;
+}
+
+function populateFoodSuggestions() {
+  const list = document.getElementById('food-suggestions');
+  list.innerHTML = commonFoodsDB.map(f => `<option value="${f.name}"></option>`).join('');
+}
 function dateKey(offsetDays) {
   const d = new Date();
   d.setDate(d.getDate() - (offsetDays || 0));
@@ -661,18 +735,38 @@ function renderAll() {
   renderFoodList();
 }
 
+document.getElementById('new-name').addEventListener('input', () => {
+  const nameEl = document.getElementById('new-name');
+  const calEl = document.getElementById('new-cal');
+  const proteinEl = document.getElementById('new-protein');
+  const match = findCommonFood(nameEl.value);
+  if (match) {
+    calEl.value = match.calories;
+    proteinEl.value = match.protein;
+    calEl.placeholder = 'Calories';
+  } else {
+    calEl.placeholder = 'Calories (not found — enter manually)';
+  }
+});
+
 document.getElementById('add-food-btn').addEventListener('click', () => {
   const nameEl = document.getElementById('new-name');
   const calEl = document.getElementById('new-cal');
   const proteinEl = document.getElementById('new-protein');
   const name = nameEl.value.trim();
-  const calories = Number(calEl.value);
-  const protein = Number(proteinEl.value) || 0;
-  if (!name || !calories) return;
+  let calories = Number(calEl.value);
+  let protein = Number(proteinEl.value) || 0;
+  if (!name) return;
+  if (!calories) {
+    const match = findCommonFood(name);
+    if (match) { calories = match.calories; protein = match.protein; }
+  }
+  if (!calories) return;
   state.foods.push({ name, calories, protein, checked: true, custom: true, time: 'Added today' });
   nameEl.value = '';
   calEl.value = '';
   proteinEl.value = '';
+  calEl.placeholder = 'Calories';
   renderAll();
   saveToday();
 });
@@ -729,6 +823,7 @@ document.getElementById('tab-week').addEventListener('click', () => {
   renderWeek();
 });
 
+populateFoodSuggestions();
 loadToday();
 </script>
 </body>
