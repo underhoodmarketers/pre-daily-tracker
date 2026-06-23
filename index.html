@@ -108,6 +108,12 @@
 
     <div class="metrics" id="metrics"></div>
 
+    <p class="section-label">Workout plan</p>
+    <div id="workout-plan" style="margin-bottom: 24px;"></div>
+
+    <p class="section-label">Daily wellness</p>
+    <div id="wellness-list" style="display:flex; flex-direction:column; gap:6px; margin-bottom:24px;"></div>
+
     <p class="section-label">Food log — check what you've eaten</p>
     <div class="food-list" id="food-list"></div>
 
@@ -130,11 +136,58 @@ const STORAGE_PREFIX = 'holisticrhythm-tracker-';
 const SPLIT_LOG_KEY = 'holisticrhythm-tracker-split-log';
 
 const strengthSplits = [
-  { name: 'Push', detail: 'Chest, shoulders, triceps' },
-  { name: 'Legs', detail: 'Quads, hamstrings, glutes, calves' },
-  { name: 'Pull', detail: 'Back, biceps' },
-  { name: 'Full body + core', detail: 'Compound lifts, core' }
+  { name: 'Push', detail: 'Chest, shoulders, triceps', exercises: [
+    'Barbell or dumbbell bench press — 4 x 8-10',
+    'Seated overhead press — 3 x 8-10',
+    'Incline dumbbell press — 3 x 10-12',
+    'Lateral raises — 3 x 12-15',
+    'Tricep pushdown — 3 x 12-15',
+    'Push-ups — 2 x to near failure'
+  ]},
+  { name: 'Legs', detail: 'Quads, hamstrings, glutes, calves', exercises: [
+    'Back or goblet squat — 4 x 8-10',
+    'Romanian deadlift — 3 x 10-12',
+    'Walking lunges — 3 x 12 per leg',
+    'Leg press — 3 x 10-12',
+    'Glute bridge or hip thrust — 3 x 12-15',
+    'Standing calf raises — 3 x 15-20'
+  ]},
+  { name: 'Pull', detail: 'Back, biceps', exercises: [
+    'Deadlift or rack pull — 4 x 6-8',
+    'Lat pulldown or pull-ups — 3 x 8-10',
+    'Seated cable row — 3 x 10-12',
+    'Face pulls — 3 x 15',
+    'Bicep curls — 3 x 12-15',
+    'Back extensions — 2 x 12-15'
+  ]},
+  { name: 'Full body + core', detail: 'Compound lifts, core', exercises: [
+    'Kettlebell swings — 4 x 15',
+    'Goblet squats — 3 x 12',
+    'Push-ups — 3 x 12-15',
+    'Plank — 3 x 30-45 sec',
+    'Russian twists — 3 x 20',
+    'Mountain climbers — 3 x 30 sec'
+  ]}
 ];
+
+const otherWorkoutPlans = {
+  zumba: ['Bollywood Zumba class', 'Optional 5-10 min core finisher after class'],
+  rest: ['Light mobility or stretching — 10-15 min', 'Easy walk, optional']
+};
+
+const wellnessItems = [
+  { id: 'water', label: 'Water intake', type: 'counter', goal: 8, unit: 'cups' },
+  { id: 'dryBrushing', label: 'Dry brushing', type: 'check' },
+  { id: 'foamRolling', label: 'Foam rolling / mobility', type: 'check' },
+  { id: 'stretching', label: 'Post-workout stretching', type: 'check' },
+  { id: 'sleep', label: '7+ hours sleep last night', type: 'check' }
+];
+
+function defaultWellness() {
+  const w = {};
+  wellnessItems.forEach(item => { w[item.id] = item.type === 'counter' ? 0 : false; });
+  return w;
+}
 
 function loadSplitLog() {
   try {
@@ -202,14 +255,17 @@ function labelForOffset(offset) {
   return offset === 0 ? 'Today' : d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
-let state = { day: 'zumba', foods: defaultFoods.map(f => ({ ...f, checked: false })) };
+let state = { day: 'zumba', foods: defaultFoods.map(f => ({ ...f, checked: false })), split: null, wellness: defaultWellness() };
 
 function loadToday() {
   try {
     const raw = localStorage.getItem(dateKey(0));
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && parsed.day && Array.isArray(parsed.foods)) state = parsed;
+      if (parsed && parsed.day && Array.isArray(parsed.foods)) {
+        state = parsed;
+        if (!state.wellness) state.wellness = defaultWellness();
+      }
     }
   } catch (e) { /* use defaults */ }
   ensureSplitForToday();
@@ -343,9 +399,75 @@ function renderFoodList() {
   });
 }
 
+function renderWorkoutPlan() {
+  const el = document.getElementById('workout-plan');
+  let exercises = [];
+  if (state.day === 'strength' || state.day === 'both') {
+    const splitInfo = strengthSplits.find(s => s.name === state.split) || strengthSplits[0];
+    exercises = splitInfo.exercises;
+    if (state.day === 'both') exercises = otherWorkoutPlans.zumba.concat(exercises);
+  } else if (state.day === 'zumba') {
+    exercises = otherWorkoutPlans.zumba;
+  } else {
+    exercises = otherWorkoutPlans.rest;
+  }
+  el.innerHTML = `
+    <div style="background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px;">
+      <ul style="margin:0; padding-left: 18px; font-size:14px; line-height:1.7;">
+        ${exercises.map(e => `<li>${e}</li>`).join('')}
+      </ul>
+    </div>`;
+}
+
+function renderWellness() {
+  const el = document.getElementById('wellness-list');
+  el.innerHTML = wellnessItems.map(item => {
+    if (item.type === 'counter') {
+      const val = state.wellness[item.id] || 0;
+      return `
+        <div class="food-row" style="cursor:default;">
+          <span class="food-name">${item.label}</span>
+          <span style="display:flex; align-items:center; gap:10px;">
+            <button class="wellness-dec" data-id="${item.id}" style="border:1px solid var(--border); background:var(--card); border-radius:6px; width:26px; height:26px; cursor:pointer;">-</button>
+            <span class="food-stats" style="min-width:70px; text-align:center;">${val} / ${item.goal} ${item.unit}</span>
+            <button class="wellness-inc" data-id="${item.id}" style="border:1px solid var(--border); background:var(--card); border-radius:6px; width:26px; height:26px; cursor:pointer;">+</button>
+          </span>
+        </div>`;
+    }
+    return `
+      <label class="food-row">
+        <span class="food-name">${item.label}</span>
+        <input type="checkbox" data-wellness="${item.id}" ${state.wellness[item.id] ? 'checked' : ''}>
+      </label>`;
+  }).join('');
+
+  el.querySelectorAll('[data-wellness]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      state.wellness[cb.dataset.wellness] = cb.checked;
+      saveToday();
+    });
+  });
+  el.querySelectorAll('.wellness-inc').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.wellness[btn.dataset.id] = (state.wellness[btn.dataset.id] || 0) + 1;
+      renderWellness();
+      saveToday();
+    });
+  });
+  el.querySelectorAll('.wellness-dec').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.wellness[btn.dataset.id] = Math.max(0, (state.wellness[btn.dataset.id] || 0) - 1);
+      renderWellness();
+      saveToday();
+    });
+  });
+}
+
 function renderAll() {
   renderDayButtons();
   renderMetrics();
+  renderWorkoutPlan();
+  renderWellness();
   renderFoodList();
 }
 
