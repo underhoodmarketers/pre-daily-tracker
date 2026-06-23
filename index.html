@@ -139,44 +139,85 @@
 const STORAGE_PREFIX = 'holisticrhythm-tracker-';
 const SPLIT_LOG_KEY = 'holisticrhythm-tracker-split-log';
 const FOOD_LIBRARY_KEY = 'holisticrhythm-tracker-food-library';
-const LIBRARY_VERSION = 3;
+const LIBRARY_VERSION = 4;
 
 const foodSchedules = {
   rest: [
-    { name: 'Chia water + lime + 10 raisins', calories: 90, protein: 3, time: 'Wake up' },
+    { name: 'Chia water', calories: 10, protein: 0, time: 'Wake up' },
+    { name: 'Lime', calories: 5, protein: 0, time: 'Wake up' },
+    { name: '10 raisins', calories: 75, protein: 1, time: 'Wake up' },
     { name: '2 boiled eggs', calories: 140, protein: 12, time: '9-10am' },
     { name: 'Oikos Pro yogurt', calories: 160, protein: 25, time: '9-10am' },
-    { name: 'Berries + apple + peanuts', calories: 210, protein: 6, time: '12-1pm' },
-    { name: '2 eggs + egg white omelette + cheese', calories: 280, protein: 26, time: '3pm' },
-    { name: 'Chicken (100g) + dal + veggies', calories: 320, protein: 38, time: '8pm' }
+    { name: 'Mixed berries', calories: 60, protein: 1, time: '12-1pm' },
+    { name: 'Apple, half', calories: 45, protein: 0, time: '12-1pm' },
+    { name: 'Peanuts, handful', calories: 105, protein: 5, time: '12-1pm' },
+    { name: '2 eggs', calories: 140, protein: 12, time: '3pm' },
+    { name: 'Egg whites', calories: 30, protein: 6, time: '3pm' },
+    { name: 'Cheese', calories: 90, protein: 6, time: '3pm' },
+    { name: 'Chicken, 100g', calories: 165, protein: 31, time: '8pm' },
+    { name: 'Dal, 1 cup', calories: 130, protein: 9, time: '8pm' },
+    { name: 'Vegetables', calories: 60, protein: 3, time: '8pm' }
   ],
   zumba: [
-    { name: 'Chia water + lime + 10 raisins', calories: 90, protein: 3, time: 'Wake up' },
+    { name: 'Chia water', calories: 10, protein: 0, time: 'Wake up' },
+    { name: 'Lime', calories: 5, protein: 0, time: 'Wake up' },
+    { name: '10 raisins', calories: 75, protein: 1, time: 'Wake up' },
     { name: '2 boiled eggs', calories: 140, protein: 12, time: '9-10am' },
     { name: 'Oikos Pro yogurt', calories: 160, protein: 25, time: '9-10am' },
-    { name: 'Berries + apple + peanuts', calories: 210, protein: 6, time: '12-1pm' },
-    { name: '2 eggs + egg white omelette + cheese', calories: 280, protein: 26, time: '3pm' },
+    { name: 'Mixed berries', calories: 60, protein: 1, time: '12-1pm' },
+    { name: 'Apple, half', calories: 45, protein: 0, time: '12-1pm' },
+    { name: 'Peanuts, handful', calories: 105, protein: 5, time: '12-1pm' },
+    { name: '2 eggs', calories: 140, protein: 12, time: '3pm' },
+    { name: 'Egg whites', calories: 30, protein: 6, time: '3pm' },
+    { name: 'Cheese', calories: 90, protein: 6, time: '3pm' },
     { name: 'Banana', calories: 105, protein: 1, time: '5:30pm' },
-    { name: 'Full scoop Isopure', calories: 110, protein: 25, time: 'Post Zumba' },
-    { name: 'Chicken (120g) + dal + veggies + rice (3/4 cup)', calories: 420, protein: 42, time: '8pm' }
+    { name: 'Isopure, full scoop', calories: 110, protein: 25, time: 'Post Zumba' },
+    { name: 'Chicken, 120g', calories: 200, protein: 37, time: '8pm' },
+    { name: 'Dal, 1 cup', calories: 130, protein: 9, time: '8pm' },
+    { name: 'Vegetables', calories: 60, protein: 3, time: '8pm' },
+    { name: 'Rice, 3/4 cup', calories: 155, protein: 3, time: '8pm' }
   ],
   strength: [
-    { name: 'Chia water + lime + 10 raisins', calories: 90, protein: 3, time: 'Wake up' },
-    { name: 'Oikos Pro yogurt + handful peanuts', calories: 250, protein: 27, time: '8:30am' },
-    { name: '2 eggs + 2 egg whites + Levels shake', calories: 320, protein: 38, time: 'Post gym' },
-    { name: 'Berries + apple + cottage cheese (1/2 cup)', calories: 240, protein: 14, time: '12-1pm' },
-    { name: '2 eggs + egg white omelette + cheese', calories: 280, protein: 26, time: '3pm' },
-    { name: 'Chicken (130g) + dal + veggies + rice', calories: 440, protein: 44, time: '8pm' }
+    { name: 'Chia water', calories: 10, protein: 0, time: 'Wake up' },
+    { name: 'Lime', calories: 5, protein: 0, time: 'Wake up' },
+    { name: '10 raisins', calories: 75, protein: 1, time: 'Wake up' },
+    { name: 'Oikos Pro yogurt', calories: 160, protein: 25, time: '8:30am' },
+    { name: 'Peanuts, handful', calories: 105, protein: 5, time: '8:30am' },
+    { name: '2 eggs', calories: 140, protein: 12, time: 'Post gym' },
+    { name: '2 egg whites', calories: 30, protein: 6, time: 'Post gym' },
+    { name: 'Levels shake', calories: 150, protein: 20, time: 'Post gym' },
+    { name: 'Mixed berries', calories: 60, protein: 1, time: '12-1pm' },
+    { name: 'Apple, half', calories: 45, protein: 0, time: '12-1pm' },
+    { name: 'Cottage cheese, 1/2 cup', calories: 90, protein: 12, time: '12-1pm' },
+    { name: '2 eggs', calories: 140, protein: 12, time: '3pm' },
+    { name: 'Egg whites', calories: 30, protein: 6, time: '3pm' },
+    { name: 'Cheese', calories: 90, protein: 6, time: '3pm' },
+    { name: 'Chicken, 130g', calories: 215, protein: 40, time: '8pm' },
+    { name: 'Dal, 1 cup', calories: 130, protein: 9, time: '8pm' },
+    { name: 'Vegetables', calories: 60, protein: 3, time: '8pm' },
+    { name: 'Rice, 1 cup', calories: 205, protein: 4, time: '8pm' }
   ],
   both: [
-    { name: 'Chia water + lime + 10 raisins', calories: 90, protein: 3, time: 'Wake up' },
-    { name: 'Oikos Pro yogurt + handful peanuts', calories: 250, protein: 27, time: '8:30am' },
-    { name: '2 eggs + 2 egg whites + Levels shake', calories: 320, protein: 38, time: 'Post gym' },
-    { name: 'Berries + apple + cottage cheese (1/2 cup)', calories: 240, protein: 14, time: '12-1pm' },
-    { name: '2 eggs + egg white omelette + cheese', calories: 280, protein: 26, time: '3pm' },
+    { name: 'Chia water', calories: 10, protein: 0, time: 'Wake up' },
+    { name: 'Lime', calories: 5, protein: 0, time: 'Wake up' },
+    { name: '10 raisins', calories: 75, protein: 1, time: 'Wake up' },
+    { name: 'Oikos Pro yogurt', calories: 160, protein: 25, time: '8:30am' },
+    { name: 'Peanuts, handful', calories: 105, protein: 5, time: '8:30am' },
+    { name: '2 eggs', calories: 140, protein: 12, time: 'Post gym' },
+    { name: '2 egg whites', calories: 30, protein: 6, time: 'Post gym' },
+    { name: 'Levels shake', calories: 150, protein: 20, time: 'Post gym' },
+    { name: 'Mixed berries', calories: 60, protein: 1, time: '12-1pm' },
+    { name: 'Apple, half', calories: 45, protein: 0, time: '12-1pm' },
+    { name: 'Cottage cheese, 1/2 cup', calories: 90, protein: 12, time: '12-1pm' },
+    { name: '2 eggs', calories: 140, protein: 12, time: '3pm' },
+    { name: 'Egg whites', calories: 30, protein: 6, time: '3pm' },
+    { name: 'Cheese', calories: 90, protein: 6, time: '3pm' },
     { name: 'Banana', calories: 105, protein: 1, time: '5:30pm' },
-    { name: 'Full scoop Isopure', calories: 110, protein: 25, time: 'Post Zumba' },
-    { name: 'Chicken (150g) + dal + veggies + rice (50g)', calories: 480, protein: 48, time: '8pm' }
+    { name: 'Isopure, full scoop', calories: 110, protein: 25, time: 'Post Zumba' },
+    { name: 'Chicken, 150g', calories: 250, protein: 47, time: '8pm' },
+    { name: 'Dal, 1 cup', calories: 130, protein: 9, time: '8pm' },
+    { name: 'Vegetables', calories: 60, protein: 3, time: '8pm' },
+    { name: 'Rice, 50g', calories: 120, protein: 2, time: '8pm' }
   ]
 };
 
@@ -316,7 +357,7 @@ function labelForOffset(offset) {
   return offset === 0 ? 'Today' : d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
-const ENTRY_VERSION = 2;
+const ENTRY_VERSION = 3;
 
 let state = { day: 'zumba', foods: newDayFoods('zumba'), split: null, wellness: defaultWellness(), entryVersion: ENTRY_VERSION };
 
